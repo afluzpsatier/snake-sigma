@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Game</title>
+<style>
+  /* ====== DESAIN UMUM ====== */
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a, #333);
+    font-family: "Segoe UI", sans-serif;
+    color: #fff;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  canvas {
+    background: #111;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    border: 2px solid #444;
+    transition: background 0.3s;
+  }
+
+  #score {
+    margin: 10px 0;
+    font-size: 1.2em;
+  }
+
+  #gameOver {
+    display: none;
+    position: absolute;
+    text-align: center;
+    background: rgba(0,0,0,0.8);
+    padding: 25px 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+  }
+
+  #gameOver h2 {
+    margin: 0 0 10px 0;
+    color: #ff4747;
+  }
+
+  #restartBtn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  #restartBtn:hover {
+    background: #218838;
+  }
+</style>
+</head>
+<body>
+  <h1>🐍 Snake Game</h1>
+  <div id="score">Skor: 0</div>
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <div id="gameOver">
+    <h2>Game Over</h2>
+    <button id="restartBtn">Restart</button>
+  </div>
+
+<script>
+  // ====== VARIABEL DASAR ======
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const box = 20; // ukuran kotak grid
+  let snake = [{ x: 10 * box, y: 10 * box }];
+  let direction = "RIGHT";
+  let food = spawnFood();
+  let score = 0;
+  let gameOver = false;
+  let speed = 100; // kecepatan gerak (ms)
+
+  // ====== INPUT KONTROL ======
+  document.addEventListener("keydown", dirControl);
+
+  function dirControl(e) {
+    if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+    else if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+    else if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    else if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+  }
+
+  // ====== FUNGSI SPAWN MAKANAN ======
+  function spawnFood() {
+    return {
+      x: Math.floor(Math.random() * 20) * box,
+      y: Math.floor(Math.random() * 20) * box
+    };
+  }
+
+  // ====== LOOP GAME ======
+  function draw() {
+    if (gameOver) return;
+
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // gambar ular
+    for (let i = 0; i < snake.length; i++) {
+      ctx.fillStyle = i === 0 ? "#0f0" : "#3c3";
+      ctx.fillRect(snake[i].x, snake[i].y, box - 1, box - 1);
+    }
+
+    // gambar makanan
+    ctx.fillStyle = "#f00";
+    ctx.beginPath();
+    ctx.arc(food.x + box/2, food.y + box/2, box/2 - 2, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // posisi kepala
+    let headX = snake[0].x;
+    let headY = snake[0].y;
+
+    // gerakkan
+    if (direction === "LEFT") headX -= box;
+    if (direction === "UP") headY -= box;
+    if (direction === "RIGHT") headX += box;
+    if (direction === "DOWN") headY += box;
+
+    // jika makan
+    if (headX === food.x && headY === food.y) {
+      score++;
+      document.getElementById("score").textContent = "Skor: " + score;
+      food = spawnFood();
+    } else {
+      snake.pop();
+    }
+
+    const newHead = { x: headX, y: headY };
+
+    // tabrakan dengan dinding
+    if (
+      headX < 0 ||
+      headY < 0 ||
+      headX >= canvas.width ||
+      headY >= canvas.height ||
+      collision(newHead, snake)
+    ) {
+      endGame();
+      return;
+    }
+
+    snake.unshift(newHead);
+  }
+
+  // ====== CEK TABRAKAN ======
+  function collision(head, arr) {
+    for (let i = 0; i < arr.length; i++) {
+      if (head.x === arr[i].x && head.y === arr[i].y) return true;
+    }
+    return false;
+  }
+
+  // ====== AKHIR GAME ======
+  function endGame() {
+    gameOver = true;
+    document.getElementById("gameOver").style.display = "block";
+  }
+
+  // ====== RESTART ======
+  document.getElementById("restartBtn").addEventListener("click", () => {
+    snake = [{ x: 10 * box, y: 10 * box }];
+    direction = "RIGHT";
+    score = 0;
+    food = spawnFood();
+    gameOver = false;
+    document.getElementById("score").textContent = "Skor: 0";
+    document.getElementById("gameOver").style.display = "none";
+  });
+
+  // ====== LOOP UTAMA ======
+  setInterval(() => {
+    if (!gameOver) {
+      draw();
+    }
+  }, speed);
+</script>
+</body>
+</html>
